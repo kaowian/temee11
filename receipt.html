@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ฟอร์มออกใบเสร็จ - เตมีย์ รีไซเคิล</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 40px;
+    }
+    .container {
+      max-width: 800px;
+      margin: auto;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+    input, select, textarea {
+      padding: 8px;
+      margin-top: 10px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      background-color: #4CAF50;
+      color: white;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+    }
+    .receipt {
+      display: none;
+      margin-top: 50px;
+      padding: 40px;
+      border: 1px solid #000;
+      background-color: #fff;
+      font-family: 'cordia new', sans-serif;
+      font-size: 22px;
+    }
+    .receipt h2, .receipt p {
+      text-align: center;
+      margin: 4px 0;
+    }
+    .receipt hr {
+      border: none;
+      border-top: 2px solid #000;
+      margin: 20px 0;
+    }
+    .receipt .details, .receipt .summary {
+      margin: 10px 0;
+    }
+    .receipt ul {
+      list-style-type: none;
+      padding-left: 0;
+    }
+    .receipt li {
+      margin-bottom: 6px;
+    }
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      .receipt, .receipt * {
+        visibility: visible;
+      }
+      .receipt {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        background-color: white;
+      }
+    }
+    .actions button {
+      margin-right: 5px;
+      background-color: #2196F3;
+    }
+    .actions .delete {
+      background-color: #f44336;
+    }
+    #saveBtn {
+      background-color: #FF9800;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>ออกใบเสร็จ - เตมีย์ รีไซเคิล</h2>
+    <label>ชื่อลูกค้า ทะเบียนรถ</label><br>
+    <input type="text" id="customer" style="width:100%">
+
+    <h3>เลือกรายการสินค้า</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>ชื่อสินค้า</th>
+          <th>ราคา ต่อลัง(บาท)</th>
+          <th>จำนวน ลัง</th>
+          <th>การกระทำ</th>
+        </tr>
+      </thead>
+      <tbody id="itemTable"></tbody>
+    </table>
+    <button onclick="addItem()">+ เพิ่มสินค้า</button>
+    <button id="saveBtn" onclick="saveChanges()">💾 เซฟการแก้ไข</button>
+    <button onclick="generateReceipt()">พิมพ์ใบเสร็จ</button>
+
+    <div class="receipt" id="receipt">
+      <h2>ใบเสร็จรับเงิน</h2>
+      <p>เตมีย์ รีไซเคิล</p>
+      <p>138/2 หมู่ 7 ต.วัดจันทร์ อ.เมือง จ.พิษณุโลก 65000</p>
+      <p>โทร: 081-8889872</p>
+      <hr>
+      <div class="details">
+        <p><strong>ชื่อลูกค้า:</strong> <span id="r_customer"></span></p>
+        <p><strong>วันที่:</strong> <span id="r_date"></span></p>
+      </div>
+      <hr>
+      <ul id="r_items"></ul>
+      <hr>
+      <div class="summary">
+        <p><strong>รวมเงินทั้งหมด:</strong> <span id="r_total"></span> บาท</p>
+      </div>
+      <p style="text-align: center; margin-top: 40px;">ขอบคุณที่ใช้บริการ</p>
+      <div style="text-align: center; margin-top: 20px;">
+        <button onclick="window.print()">พิมพ์</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let prices = JSON.parse(localStorage.getItem('prices')) || {
+      "เบียร์ช้าง": 18,
+      "เบียร์ลีโอ": 10,
+      "ไฮเนเก้น620": 16,
+      "น้ำปลาคอยาว": 21,
+      "น้ำหวาน": 15,
+      "พรทิพย์": 23,
+      "หงส์แบนตัวนูน": 11,
+      "หงส์ใหม่ตัวนูน": 18,
+      "สิงห์ใหญ่": 9,
+      "สิงห์เล็ก": 15,
+      "เหล้าใหญ่": 14,
+      "เหล้าเล็ก": 25,
+      "แสงกลม": 23,
+      "เหล้าใหญ่รวงข้าว": 11,
+      "เหล้าเล็กรวงข้าว": 21,
+      "เหล้าใหญ่ตะวันแดง": 11,
+      "700cc": 21
+
+    };
+
+    const itemTable = document.getElementById("itemTable");
+
+    function renderItems() {
+      itemTable.innerHTML = '';
+      Object.entries(prices).forEach(([name, price]) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td><input type="text" value="${name}" onchange="renameItem('${name}', this.value)"></td>
+          <td><input type="number" id="price_${name}" value="${price}" onchange="updatePrice('${name}', this.value)"></td>
+          <td><input type="number" id="qty_${name}" min="0" value="0" style="width: 60px;"></td>
+          <td class="actions">
+            <button class="delete" onclick="deleteItem('${name}')">ลบ</button>
+          </td>
+        `;
+        itemTable.appendChild(row);
+      });
+    }
+
+    function renameItem(oldName, newName) {
+      if (newName && !prices[newName]) {
+        prices[newName] = prices[oldName];
+        delete prices[oldName];
+        renderItems();
+      }
+    }
+
+    function updatePrice(name, newPrice) {
+      prices[name] = parseFloat(newPrice);
+    }
+
+    function deleteItem(name) {
+      delete prices[name];
+      renderItems();
+    }
+
+    function addItem() {
+      let newName = prompt("ชื่อสินค้าใหม่:");
+      if (newName && !prices[newName]) {
+        prices[newName] = 0;
+        renderItems();
+      }
+    }
+
+    function saveChanges() {
+      localStorage.setItem('prices', JSON.stringify(prices));
+      alert("ข้อมูลสินค้าถูกบันทึกเรียบร้อยแล้ว ✅");
+    }
+
+    function generateReceipt() {
+      const customer = document.getElementById('customer').value;
+      const rItems = document.getElementById('r_items');
+      const rTotal = document.getElementById('r_total');
+      const rCustomer = document.getElementById('r_customer');
+      const rDate = document.getElementById('r_date');
+      rItems.innerHTML = '';
+      let total = 0;
+
+      Object.keys(prices).forEach(name => {
+        const qtyInput = document.getElementById(`qty_${name}`);
+        const priceInput = document.getElementById(`price_${name}`);
+        if (qtyInput && priceInput) {
+          const qty = parseInt(qtyInput.value);
+          const price = parseFloat(priceInput.value);
+          if (qty > 0) {
+            const itemTotal = price * qty;
+            total += itemTotal;
+            const li = document.createElement('li');
+            li.textContent = `${name} x ${qty} = ${itemTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท`;
+            rItems.appendChild(li);
+          }
+        }
+      });
+
+      rCustomer.textContent = customer;
+      rDate.textContent = new Date().toLocaleDateString('th-TH');
+      rTotal.textContent = total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      document.getElementById('receipt').style.display = 'block';
+    }
+
+    renderItems();
+  </script>
+</body>
+</html>

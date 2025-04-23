@@ -1,0 +1,92 @@
+
+body {
+  font-family: sans-serif;
+  margin: 40px;
+}
+.container {
+  max-width: 800px;
+  margin: auto;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+input, select, textarea {
+  padding: 8px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+button {
+  padding: 10px 20px;
+  font-size: 16px;
+  border: none;
+  background-color: #4CAF50;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+th, td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: left;
+}
+.receipt {
+  display: none;
+  margin-top: 50px;
+  padding: 40px;
+  border: 1px solid #000;
+  background-color: #fff;
+  font-family: 'cordia new', sans-serif;
+  font-size: 22px;
+}
+.receipt h2, .receipt p {
+  text-align: center;
+  margin: 4px 0;
+}
+.receipt hr {
+  border: none;
+  border-top: 2px solid #000;
+  margin: 20px 0;
+}
+.receipt .details, .receipt .summary {
+  margin: 10px 0;
+}
+.receipt ul {
+  list-style-type: none;
+  padding-left: 0;
+}
+.receipt li {
+  margin-bottom: 6px;
+}
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .receipt, .receipt * {
+    visibility: visible;
+  }
+  .receipt {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background-color: white;
+  }
+}
+.actions button {
+  margin-right: 5px;
+  background-color: #2196F3;
+}
+.actions .delete {
+  background-color: #f44336;
+}
+#saveBtn {
+  background-color: #FF9800;
+}
